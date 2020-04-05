@@ -125,6 +125,7 @@ public void OnPluginStart()
 {
 	LoadTranslations("MyWeaponAllocator.phrases");
 
+    RegConsoleCmd("sm_helm", Command_Helm, "open the helm menu");
 	RegConsoleCmd("sm_weapon", Command_Weapons, "open the weapon menu");
 	RegConsoleCmd("sm_awp", Command_AWP, "open the AWP menu");
 
@@ -167,7 +168,7 @@ public void OnPluginStart()
 	gc_iOrder = AutoExecConfig_CreateConVar("mywa_buy_order", "0", "order to buy the equipments / 0 - random, 1 - 1st grenades 2nd armor & kit, 2 - 1st armor & kit 2nd grenades ", _, true, 0.0, true, 2.0);
 
 	gc_bKevlar = AutoExecConfig_CreateConVar("mywa_kevlar", "1", "0 - disabled, 1 - enable kevlar", _, true, 0.0, true, 1.0);
-	gc_bHelm = AutoExecConfig_CreateConVar("mywa_helm", "1", "0 - disabled, 1 - enable helm", _, true, 0.0, true, 1.0);
+	gc_bHelm = AutoExecConfig_CreateConVar("mywa_helm", "0", "0 - disabled, 1 - enable helm", _, true, 0.0, true, 1.0);
 	gc_bDefuser = AutoExecConfig_CreateConVar("mywa_defuser", "1", "0 - disabled, 1 - enable defuser", _, true, 0.0, true, 1.0);
 
 	gc_bDeagle = AutoExecConfig_CreateConVar("mywa_deagle", "1", "0 - disabled, 1 - enable deagle for pistol & fullbuy rounds", _, true, 0.0, true, 1.0);
@@ -356,6 +357,19 @@ public Action Command_AWP(int client, int args)
 		return Plugin_Handled;
 
 	Menu_AWP(client);
+
+	return Plugin_Handled;
+}
+
+public Action Command_Helm(int client, int args)
+{
+    if (!gc_bPlugin.BoolValue)
+		return Plugin_Handled;
+
+	if (!IsValidClient(client))
+		return Plugin_Handled;
+
+	Menu_Helm(client);
 
 	return Plugin_Handled;
 }
@@ -615,6 +629,22 @@ public void Menu_AWP(int client)
 	menu.Display(client, MENU_TIME_FOREVER);
 }
 
+public void Menu_Helm(int client)
+{
+	char sBuffer[255];
+	Menu menu = new Menu(Handler_Helm);
+
+	Format(sBuffer, sizeof(sBuffer), "%t", "Yes");
+	menu.AddItem("1", sBuffer);
+	Format(sBuffer, sizeof(sBuffer), "%t", "No");
+	menu.AddItem("0", sBuffer);
+
+	Format(sBuffer, sizeof(sBuffer), "%t", "Allow Helm");
+
+	menu.SetTitle(sBuffer);
+	menu.Display(client, MENU_TIME_FOREVER);
+}
+
 public int Handler_Primary(Menu menu, MenuAction action, int client, int selection)
 {
 	if (action == MenuAction_Select)
@@ -683,6 +713,27 @@ public int Handler_SMG(Menu menu, MenuAction action, int client, int selection)
 				Menu_AWP(client);
 			}
 		}
+	}
+}
+
+public int Handler_Helm(Menu menu, MenuAction action, int client, int selection)
+{
+	if (action == MenuAction_Select)
+	{
+		char sBuffer[24];
+
+		menu.GetItem(selection, sBuffer, sizeof(sBuffer));
+
+		if (strcmp(sBuffer, "1") == 0)
+		{
+			gc_bHelm = true;
+		}
+		else
+		{
+			gc_bHelm = false;
+		}
+
+		Retakes_Message(client, "%t", "Weapons next round");
 	}
 }
 
@@ -915,12 +966,12 @@ void EquipWeapons(int client)
 void GiveArmorKit(int client, int money, int order)
 {
 	if (gc_bKevlar.BoolValue && gc_bHelm.BoolValue && money >= 1000)
-	{
-		SetEntProp(client, Prop_Send, "m_ArmorValue", 100);
-		SetEntProp(client, Prop_Send, "m_bHasHelmet", 1);
-		money -= 1000;
-	}
-	else if (gc_bKevlar.BoolValue && money >= 650)
+    {
+        SetEntProp(client, Prop_Send, "m_ArmorValue", 100);
+        SetEntProp(client, Prop_Send, "m_bHasHelmet", 1);
+        money -= 1000;
+    }
+    else if (gc_bKevlar.BoolValue && money >= 650)
 	{
 		SetEntProp(client, Prop_Send, "m_ArmorValue", 100);
 		money -= 650;
